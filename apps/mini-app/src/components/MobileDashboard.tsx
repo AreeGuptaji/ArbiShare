@@ -105,10 +105,10 @@ export function MobileDashboard() {
       <div className="fixed right-0 bottom-0 left-0 border-t border-gray-200 bg-white">
         <div className="flex">
           {[
-            { name: "Dashboard", icon: FiActivity },
-            { name: "Portfolio", icon: FiPieChart },
-            { name: "Leaderboard", icon: FiTrendingUp },
-            { name: "Settings", icon: FiSettings },
+            { name: "Dashboard", icon: <FiActivity /> },
+            { name: "Portfolio", icon: <FiPieChart /> },
+            { name: "Leaderboard", icon: <FiTrendingUp /> },
+            { name: "Settings", icon: <FiSettings /> },
           ].map((tab) => {
             const IconComponent = tab.icon;
             return (
@@ -119,7 +119,7 @@ export function MobileDashboard() {
                   activeTab === tab.name ? "text-blue-600" : "text-gray-600"
                 }`}
               >
-                <IconComponent className="mx-auto mb-1 h-5 w-5" />
+                {tab.icon}
                 <div className="text-xs font-medium">{tab.name}</div>
               </button>
             );
@@ -143,7 +143,9 @@ function ArbitrageView({ stats }: { stats: typeof mockArbitrageStats }) {
           <div className="text-2xl font-bold text-gray-900">
             {stats.todaysOpportunities}
           </div>
-          <div className="text-xs text-gray-600">Today's Opportunities</div>
+          <div className="text-xs text-gray-600">
+            Today&apos;s Opportunities
+          </div>
           <div className="text-xs text-green-600">
             +{stats.opportunitiesChange}%
           </div>
