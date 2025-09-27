@@ -1,22 +1,82 @@
 "use client";
-
+import {
+  MiniKit,
+  type VerifyCommandInput,
+  VerificationLevel,
+  type ISuccessResult,
+} from "@worldcoin/minikit-js";
 import { useState } from "react";
 import { FiShield, FiCheck } from "react-icons/fi";
 
-export function WorldIDVerify() {
+interface WorldIDVerifyParams {
+  setIsVerified: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+interface VerifyResponse {
+  verifyRes: {
+    success: boolean;
+  };
+  status: number;
+  error?: string;
+  message?: string;
+}
+
+export function WorldIDVerify({ setIsVerified }: WorldIDVerifyParams) {
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const verifyPayload: VerifyCommandInput = {
+    action: "app-entry",
+    verification_level: VerificationLevel.Device,
+  };
+
   const handleVerify = async () => {
+    if (!MiniKit.isInstalled()) {
+      console.log("MiniKit is not installed");
+      return;
+    }
+
     setIsVerifying(true);
 
-    // TODO: Implement actual WorldCoin verification
-    // - Use Worldcoin Mini-App SDK
-    // - Handle verification flow in mini-app context
-    // - Connect with backend API
+    try {
+      console.log("Starting verification process...");
 
-    // Simulate verification process
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsVerifying(false);
+      // World App will open a drawer prompting the user to confirm the operation, promise is resolved once user confirms or cancels
+      const { finalPayload } =
+        await MiniKit.commandsAsync.verify(verifyPayload);
+      console.log("MiniKit verification result:", finalPayload);
+
+      if (finalPayload.status === "error") {
+        console.log("Error payload from MiniKit:", finalPayload);
+        setIsVerifying(false);
+        return;
+      }
+
+      console.log("Sending verification to backend...");
+
+      // Verify the proof in the backend
+      const verifyResponse = await fetch("/api/verify-proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          payload: finalPayload as ISuccessResult, // Parses only the fields we need to verify
+          action: "app-entry",
+        }),
+      });
+
+      if (verifyResponse.ok) {
+        console.log("Verification successful!");
+        setIsVerified(true);
+      } else {
+        console.log("Verification failed:");
+        // Handle verification failure
+      }
+    } catch (error) {
+      console.error("Verification process error:", error);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
