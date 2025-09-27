@@ -5,9 +5,10 @@
 
 export function isMiniApp(): boolean {
   // Check if running in Worldcoin Mini-App
-  return typeof window !== 'undefined' && 
-         window.location.hostname.includes('worldcoin') ||
-         !!window.navigator.userAgent.match(/WorldApp/i);
+  return (
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("worldcoin")
+  );
 }
 
 export function getMiniAppContext() {
