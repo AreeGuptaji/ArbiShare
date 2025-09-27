@@ -25,7 +25,7 @@ export function WorldIDVerify({ setIsVerified }: WorldIDVerifyParams) {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyPayload: VerifyCommandInput = {
-    action: "app-entry action",
+    action: "app-entry",
     verification_level: VerificationLevel.Device,
   };
 
@@ -54,31 +54,22 @@ export function WorldIDVerify({ setIsVerified }: WorldIDVerifyParams) {
       console.log("Sending verification to backend...");
 
       // Verify the proof in the backend
-      const verifyResponse = await fetch("/api/verify", {
+      const verifyResponse = await fetch("/api/verify-proof", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           payload: finalPayload as ISuccessResult, // Parses only the fields we need to verify
-          action: "app-entry action",
+          action: "app-entry",
         }),
       });
 
-      const verifyResponseJson =
-        (await verifyResponse.json()) as VerifyResponse;
-
-      console.log("API Response:", verifyResponseJson);
-      console.log("HTTP Status:", verifyResponse.status);
-
-      if (verifyResponse.ok && verifyResponseJson.status === 200) {
+      if (verifyResponse.ok) {
         console.log("Verification successful!");
         setIsVerified(true);
       } else {
-        console.log(
-          "Verification failed:",
-          verifyResponseJson.error ?? verifyResponseJson.message,
-        );
+        console.log("Verification failed:");
         // Handle verification failure
       }
     } catch (error) {
