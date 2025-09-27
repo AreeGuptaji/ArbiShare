@@ -1,0 +1,14 @@
+{
+  "name": "FlashArb",
+  "short_name": "FlashArb",
+  "description": "Sybil-resistant DeFi arbitrage for humans",
+  "version": "1.0.0",
+  "permissions": [
+    "verify-human"
+  ],
+  "worldcoin": {
+    "app_id": "app_staging_your_app_id_here",
+    "action": "verify-human",
+    "credential_types": ["orb", "phone"]
+  }
+}

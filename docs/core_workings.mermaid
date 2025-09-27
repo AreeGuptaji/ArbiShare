@@ -1,0 +1,105 @@
+graph TB
+    %% User Layer
+    subgraph "User Interface"
+        WMA[Worldcoin Mini App<br/>React + Worldcoin SDK]
+        WEB[Web Dashboard<br/>React Frontend]
+    end
+
+    %% Identity & Authentication
+    subgraph "Identity Verification"
+        WC[Worldcoin Protocol<br/>World ID Verification]
+        WID[(World ID<br/>Sybil Resistance)]
+    end
+
+    %% Backend Services
+    subgraph "Backend Services"
+        API[Node.js Backend<br/>TypeScript]
+        NOTI[Notification Service<br/>Push/Email Alerts]
+        ANALYTICS[Analytics Engine<br/>Trade Stats & Monitoring]
+    end
+
+    %% External APIs
+    subgraph "External Integrations"
+        ONEINCH[1inch Aggregation API<br/>Price Discovery & Routing]
+        RPC[Chain RPC Endpoints<br/>Base, Optimism, Mantle]
+    end
+
+    %% Smart Contract Layer
+    subgraph "Smart Contracts (Multi-Chain)"
+        subgraph "Uniswap v4 Integration"
+            HOOKS[FlashArb Hook Contracts<br/>BeforeSwap/AfterSwap]
+            POOLS[Uniswap v4 Pools<br/>Liquidity Sources]
+        end
+        
+        subgraph "Core Protocol"
+            FLASH[Flash Loan Contract<br/>Atomic Execution Logic]
+            ARB[Arbitrage Contract<br/>Cross-Chain Coordination]
+            GUARD[Sybil Guard Contract<br/>Rate Limiting & Access Control]
+        end
+    end
+
+    %% Data Storage
+    subgraph "Data Layer"
+        DB[(Database<br/>User Data & Trade History)]
+        CACHE[(Cache<br/>Price Data & Opportunities)]
+    end
+
+    %% Flow Connections
+    WMA --> WC
+    WEB --> API
+    WMA --> API
+    WC --> WID
+    API --> ONEINCH
+    API --> RPC
+    API --> DB
+    API --> CACHE
+    API --> NOTI
+    API --> ANALYTICS
+    
+    HOOKS --> FLASH
+    HOOKS --> POOLS
+    FLASH --> ARB
+    ARB --> GUARD
+    GUARD --> WID
+    
+    API --> HOOKS
+    ONEINCH --> API
+    RPC --> HOOKS
+
+    %% Process Flow
+    subgraph "Arbitrage Execution Flow"
+        direction TB
+        A[User Authenticated via World ID] --> B[Scan for Arbitrage Opportunities]
+        B --> C[1inch API Price Discovery]
+        C --> D[Calculate Profit & Gas Costs]
+        D --> E[Execute Flash Loan via Hook]
+        E --> F[Atomic Cross-Chain Swap]
+        F --> G[Profit Distribution]
+        G --> H[Transaction Rollback on Failure]
+    end
+
+    %% Security & Compliance
+    subgraph "Security Layer"
+        AUDIT[OpenZeppelin Audit]
+        MONITOR[Real-time Monitoring]
+        COMPLIANCE[KYC/AML Compatibility]
+    end
+
+    HOOKS -.-> AUDIT
+    API -.-> MONITOR
+    WID -.-> COMPLIANCE
+
+    %% Styling
+    classDef userInterface fill:#e1f5fe
+    classDef identity fill:#fff3e0
+    classDef backend fill:#f3e5f5
+    classDef contracts fill:#e8f5e8
+    classDef external fill:#fce4ec
+    classDef security fill:#ffebee
+
+    class WMA,WEB userInterface
+    class WC,WID identity
+    class API,NOTI,ANALYTICS backend
+    class HOOKS,POOLS,FLASH,ARB,GUARD contracts
+    class ONEINCH,RPC external
+    class AUDIT,MONITOR,COMPLIANCE security
