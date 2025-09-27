@@ -10,3 +10,12 @@ via_ir = false
 
 [lint]
 exclude_lints = ["screaming-snake-case-immutable", "screaming-snake-case-const"]
+
+# Network configurations
+[rpc_endpoints]
+unichain_sepolia = "https://sepolia.unichain.org"
+base_sepolia = "https://sepolia.base.org"
+optimism_sepolia = "https://sepolia.optimism.io"
+
+[etherscan]
+unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://sepolia.uniscan.xyz/api" }
