@@ -1,89 +1,126 @@
-graph TD
-    %% Onboarding Phase
-    START([User Opens FlashArb App]) --> INSTALL{First Time User?}
+flowchart TD
+    %% Enhanced Onboarding Phase
+    START([User Opens MEV-Share dApp]) --> INSTALL{First Time User?}
     INSTALL -->|Yes| DOWNLOAD[Download Worldcoin Mini App]
     INSTALL -->|No| LOGIN[Login with World ID]
-    DOWNLOAD --> WORLDID[Complete World ID Verification<br/>Iris/Face Scan]
+    DOWNLOAD --> WORLDID[Complete World ID Verification<br/>Iris/Face Scan + MEV Agreement]
     
-    %% Identity Verification
+    %% Enhanced Identity Verification
     WORLDID --> VERIFY{Verification<br/>Successful?}
     VERIFY -->|No| RETRY[Retry Verification<br/>or Contact Support]
     RETRY --> WORLDID
-    VERIFY -->|Yes| ONBOARD[Complete Onboarding<br/>Accept Terms & Conditions]
+    VERIFY -->|Yes| MEV_ONBOARD[MEV-Share Onboarding<br/>Learn About Cross-Chain Arbitrage]
     LOGIN --> DASHBOARD
 
-    %% Main Dashboard
-    ONBOARD --> DASHBOARD[FlashArb Dashboard<br/>View Opportunities & Stats]
+    %% MEV Education & Setup
+    MEV_ONBOARD --> EDUCATE[Interactive MEV Tutorial<br/>How Arbitrage Profits Work]
+    EDUCATE --> SET_PREFERENCES[Set MEV Preferences<br/>Risk Level, Auto-Execute, Chains]
+    SET_PREFERENCES --> DASHBOARD
+
+    %% Enhanced Dashboard
+    DASHBOARD[MEV-Share Dashboard<br/>Live Opportunities, Stats, Earnings] --> SCAN_MODE{Choose Action}
     
-    %% Opportunity Discovery
-    DASHBOARD --> SCAN[Scan for Arbitrage<br/>Opportunities]
-    SCAN --> CHECK_RATE{Rate Limit Check<br/>1 per hour per user}
-    CHECK_RATE -->|Rate Limited| WAIT[Wait for Rate Limit Reset<br/>Show Countdown Timer]
-    WAIT --> DASHBOARD
-    CHECK_RATE -->|Available| DISCOVER[1inch API Price Discovery<br/>Cross-Chain Analysis]
+    %% Real-Time Opportunity Monitoring
+    SCAN_MODE -->|Monitor| LIVE_SCAN[Live Cross-Chain Scanner<br/>Real-time Arbitrage Detection]
+    SCAN_MODE -->|Manual Swap| MANUAL_SWAP[Manual Token Swap<br/>With MEV Protection]
+    SCAN_MODE -->|View Stats| STATS[View Earnings & Stats<br/>MEV History, Leaderboard]
     
-    %% Opportunity Evaluation
-    DISCOVER --> FOUND{Profitable<br/>Opportunity?}
-    FOUND -->|No| NOTIFY_NONE[No Opportunities Available<br/>Check Back Later]
-    NOTIFY_NONE --> DASHBOARD
-    FOUND -->|Yes| DISPLAY[Display Opportunity Details<br/>Profit Estimate, Gas Costs, Chains]
+    %% Live Scanning Flow
+    LIVE_SCAN --> DETECT_MEV{MEV Opportunity<br/>Detected?}
+    DETECT_MEV -->|No| SCANNING_WAIT[Scanning...<br/>Real-time Price Monitoring]
+    SCANNING_WAIT --> DETECT_MEV
+    DETECT_MEV -->|Yes| OPPORTUNITY_FOUND[MEV Alert!<br/>Cross-Chain Arbitrage Found]
+    
+    %% Opportunity Details
+    OPPORTUNITY_FOUND --> SHOW_DETAILS[Display Opportunity<br/>Source: Ethereum<br/>Target: Arbitrum<br/>Expected Profit: $150<br/>Time: 30s window]
+    SHOW_DETAILS --> RATE_CHECK{Rate Limit Check<br/>1 per hour per user}
+    RATE_CHECK -->|Rate Limited| COOLDOWN_WAIT[Cooldown Active<br/>Show Timer & Next Opportunity]
+    COOLDOWN_WAIT --> LIVE_SCAN
+    RATE_CHECK -->|Available| MEV_DECISION{User Decision}
     
     %% Decision Making
-    DISPLAY --> DECIDE{User Decision}
-    DECIDE -->|Cancel| DASHBOARD
-    DECIDE -->|Execute| CONFIRM[Confirm Transaction Details<br/>Review Risks & Fees]
+    MEV_DECISION -->|Skip| LIVE_SCAN
+    MEV_DECISION -->|Execute| FLASH_CONFIRM[Confirm Flash Arbitrage<br/>Review: Flash Loan + Cross-Chain]
     
-    %% Transaction Execution
-    CONFIRM --> EXECUTE[Execute Flash Loan Arbitrage<br/>via Uniswap v4 Hooks]
-    EXECUTE --> ATOMIC[Atomic Cross-Chain Swap<br/>All or Nothing Execution]
+    %% Manual Swap Flow  
+    MANUAL_SWAP --> SELECT_TOKENS[Select Token Pair<br/>Amount & Destination Chain]
+    SELECT_TOKENS --> SWAP_SCAN[Scan for MEV During Swap<br/>Cross-Chain Price Analysis]
+    SWAP_SCAN --> SWAP_MEV_FOUND{MEV Opportunity<br/>During Swap?}
+    SWAP_MEV_FOUND -->|No| REGULAR_SWAP[Execute Regular Swap<br/>Best Available Price]
+    SWAP_MEV_FOUND -->|Yes| MEV_ENHANCED_SWAP[MEV-Enhanced Swap!<br/>Your Swap + Bonus Profit]
     
-    %% Transaction Results
-    ATOMIC --> SUCCESS{Transaction<br/>Successful?}
-    SUCCESS -->|Yes| PROFIT[Profit Distributed to User<br/>Update Balance & Stats]
-    SUCCESS -->|No| ROLLBACK[Automatic Rollback<br/>No Loss to User]
+    %% Flash Arbitrage Execution
+    FLASH_CONFIRM --> EXECUTE_FLASH[Execute Flash Loan Arbitrage<br/>1. Flash Borrow 10,000 USDC<br/>2. Buy ETH on Arbitrum<br/>3. Sell ETH on Ethereum<br/>4. Capture $150 profit]
     
-    %% Post-Transaction
-    PROFIT --> UPDATE_STATS[Update User Stats<br/>Leaderboard & XP]
-    ROLLBACK --> LOG_FAILURE[Log Failed Attempt<br/>Analyze Failure Reason]
-    UPDATE_STATS --> CELEBRATE[Show Success Animation<br/>Profit Summary]
-    LOG_FAILURE --> EXPLAIN[Explain Failure Reason<br/>Market Conditions/Competition]
+    %% Cross-Chain Execution
+    EXECUTE_FLASH --> CROSS_CHAIN[Atomic Cross-Chain Execution<br/>Via LayerZero/Wormhole]
+    MEV_ENHANCED_SWAP --> CROSS_CHAIN
+    REGULAR_SWAP --> TRANSACTION_COMPLETE
     
-    %% Return to Dashboard
-    CELEBRATE --> COOLDOWN[Rate Limit Cooldown<br/>1 Hour Timer Active]
-    EXPLAIN --> DASHBOARD
-    COOLDOWN --> DASHBOARD
-
-    %% Additional Features
-    DASHBOARD --> PORTFOLIO[View Portfolio<br/>Trading History & Analytics]
-    DASHBOARD --> LEADERBOARD[Check Leaderboard<br/>Community Rankings]
-    DASHBOARD --> SETTINGS[Settings & Preferences<br/>Notification Settings]
+    %% Transaction Results with MEV
+    CROSS_CHAIN --> MEV_SUCCESS{MEV Execution<br/>Successful?}
+    MEV_SUCCESS -->|Yes| PROFIT_SPLIT[Profit Distribution<br/>User Gets: $112.50 75%<br/>Protocol: $37.50 25%]
+    MEV_SUCCESS -->|No| MEV_ROLLBACK[Automatic Rollback<br/>No Loss to User<br/>Gas Costs Covered]
     
-    PORTFOLIO --> DASHBOARD
-    LEADERBOARD --> DASHBOARD
-    SETTINGS --> DASHBOARD
+    %% Success Flow
+    PROFIT_SPLIT --> UPDATE_BALANCE[Update User Balance<br/>Add MEV Earnings to Wallet]
+    UPDATE_BALANCE --> MEV_CELEBRATION[MEV Success Animation<br/>Show Profit Breakdown<br/>Update Leaderboard Position]
+    
+    %% Enhanced Stats & Gamification
+    MEV_CELEBRATION --> UPDATE_MEV_STATS[Update MEV Statistics<br/>Total Earned: $1,247<br/>Rank: #23 Global<br/>MEV Score: +150 XP]
+    UPDATE_MEV_STATS --> ACHIEVEMENT_CHECK{New Achievement<br/>Unlocked?}
+    ACHIEVEMENT_CHECK -->|Yes| SHOW_ACHIEVEMENT[Achievement Unlocked!<br/>Cross-Chain Master<br/>Bonus: Reduced Fees]
+    ACHIEVEMENT_CHECK -->|No| COOLDOWN_START
+    SHOW_ACHIEVEMENT --> COOLDOWN_START
+    
+    %% Rollback Flow
+    MEV_ROLLBACK --> EXPLAIN_FAILURE[Explain Failure Reason<br/>Competition from MEV bots<br/>Price changed too quickly<br/>Network congestion]
+    EXPLAIN_FAILURE --> COMPENSATION[Gas Cost Compensation<br/>Protocol Covers Failed Attempts]
+    COMPENSATION --> DASHBOARD
+    
+    %% Post-Execution Cooldown
+    COOLDOWN_START[Rate Limit Activated<br/>1 Hour Cooldown Period<br/>Monitor Only Mode]
+    TRANSACTION_COMPLETE --> COOLDOWN_START
+    COOLDOWN_START --> DASHBOARD
 
-    %% Liquidity Provider Journey (Branch)
-    DASHBOARD --> LP_MODE{Switch to LP Mode?}
-    LP_MODE -->|Yes| LP_DEPOSIT[Deposit Liquidity<br/>Earn Yield on Flash Loans]
-    LP_MODE -->|No| DASHBOARD
-    LP_DEPOSIT --> LP_DASHBOARD[LP Dashboard<br/>Monitor Yield & Utilization]
-    LP_DASHBOARD --> DASHBOARD
+    %% Enhanced Feature Branches
+    STATS --> DETAILED_STATS[Detailed Analytics<br/>Cross-Chain Performance<br/>MEV vs Regular Swaps<br/>Profit Per Chain<br/>Success Rate Stats]
+    DETAILED_STATS --> DASHBOARD
+    
+    DASHBOARD --> SOCIAL_FEATURES[Social Features<br/>MEV Leaderboard & Community]
+    SOCIAL_FEATURES --> LEADERBOARD[Global MEV Leaderboard<br/>Top Earners & Strategies]
+    LEADERBOARD --> FOLLOW_TRADERS[Follow Top MEV Traders<br/>Learn Their Strategies]
+    FOLLOW_TRADERS --> DASHBOARD
+    
+    %% Liquidity Provider Enhanced Journey
+    DASHBOARD --> LP_MEV_MODE{Provide Liquidity<br/>for MEV Operations?}
+    LP_MEV_MODE -->|Yes| LP_MEV_DEPOSIT[Deposit Flash Loan Capital<br/>Earn Yield from MEV Operations]
+    LP_MEV_MODE -->|No| DASHBOARD
+    LP_MEV_DEPOSIT --> LP_MEV_DASHBOARD[LP-MEV Dashboard<br/>Utilization Rate<br/>MEV-Generated Yield<br/>Active Flash Loans]
+    LP_MEV_DASHBOARD --> DASHBOARD
+    
+    %% Advanced Settings
+    DASHBOARD --> MEV_SETTINGS[MEV Settings<br/>Chain Preferences, Auto-Execute<br/>Risk Level, Profit Threshold]
+    MEV_SETTINGS --> NOTIFICATION_SETUP[MEV Notifications<br/>Push Alerts for Opportunities<br/>Discord/Telegram Integration]
+    NOTIFICATION_SETUP --> DASHBOARD
+    
+    %% Emergency & Support
+    DASHBOARD --> MEV_SUPPORT[MEV-Specific Support<br/>Failed Arbitrage Recovery<br/>Cross-Chain Issue Resolution]
+    MEV_SUPPORT --> DASHBOARD
 
-    %% Emergency/Support
-    DASHBOARD --> SUPPORT[Contact Support<br/>Technical Issues]
-    SUPPORT --> DASHBOARD
+    %% Enhanced Styling for MEV Features
+    classDef onboarding fill:#e3f2fd,stroke:#1976d2
+    classDef verification fill:#fff8e1,stroke:#f57f17
+    classDef mev_opportunity fill:#e8f5e8,stroke:#388e3c
+    classDef flash_execution fill:#fce4ec,stroke:#c2185b
+    classDef mev_result fill:#f3e5f5,stroke:#7b1fa2
+    classDef social_feature fill:#f9fbe7,stroke:#689f38
+    classDef advanced fill:#fff3e0,stroke:#f57c00
 
-    %% Styling for different phases
-    classDef onboarding fill:#e3f2fd
-    classDef verification fill:#fff8e1
-    classDef opportunity fill:#e8f5e8
-    classDef execution fill:#fce4ec
-    classDef result fill:#f3e5f5
-    classDef feature fill:#f9fbe7
-
-    class START,INSTALL,DOWNLOAD,WORLDID onboarding
-    class VERIFY,RETRY,ONBOARD,LOGIN verification
-    class SCAN,CHECK_RATE,DISCOVER,FOUND,DISPLAY opportunity
-    class DECIDE,CONFIRM,EXECUTE,ATOMIC execution
-    class SUCCESS,PROFIT,ROLLBACK,UPDATE_STATS,CELEBRATE result
-    class PORTFOLIO,LEADERBOARD,SETTINGS,LP_MODE feature
+    class START,INSTALL,DOWNLOAD,WORLDID,MEV_ONBOARD,EDUCATE onboarding
+    class VERIFY,RETRY,LOGIN,SET_PREFERENCES verification
+    class LIVE_SCAN,DETECT_MEV,OPPORTUNITY_FOUND,SHOW_DETAILS,SWAP_SCAN mev_opportunity
+    class FLASH_CONFIRM,EXECUTE_FLASH,CROSS_CHAIN,MEV_ENHANCED_SWAP flash_execution
+    class MEV_SUCCESS,PROFIT_SPLIT,MEV_CELEBRATION,UPDATE_MEV_STATS mev_result
+    class SOCIAL_FEATURES,LEADERBOARD,FOLLOW_TRADERS,ACHIEVEMENT_CHECK social_feature
+    class MEV_SETTINGS,NOTIFICATION_SETUP,LP_MEV_MODE advanced
