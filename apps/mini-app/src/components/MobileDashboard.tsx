@@ -17,6 +17,11 @@ import {
 } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
 import {
+  ScanningFlowScreens,
+  type ScanningState,
+  type OpportunityData,
+} from "./ScanningScreens";
+import {
   FiTrendingUp,
   FiZap,
   FiActivity,
@@ -132,10 +137,62 @@ function ArbitrageView({
 }: {
   stats: typeof mockArbitrageStats;
 }) {
-  const [isScanning, setIsScanning] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [scanningState, setScanningState] = useState<ScanningState>("idle");
+  const [opportunityData, setOpportunityData] =
+    useState<OpportunityData | null>(null);
+
+  // Mock data for demonstration
+  const mockOpportunity: OpportunityData = {
+    profit: 127.84,
+    profitPercentage: 2.34,
+    sourceChain: "Ethereum",
+    destinationChain: "Polygon",
+    tokenPair: {
+      token1: { symbol: "ETH", amount: "5.0", value: "$14,236.60" },
+      token2: { symbol: "USDC", amount: "14,364.44", value: "$14,364.44" },
+    },
+    gasCosts: 23.45,
+    executionTime: 45,
+    riskLevel: "Low",
+    successRate: 94.2,
+    strategy:
+      "This arbitrage opportunity leverages price differences between Uniswap V3 on Ethereum and QuickSwap on Polygon. The strategy involves flash borrowing ETH, swapping for USDC on Ethereum, bridging to Polygon, swapping back to ETH, and repaying the loan.",
+    keyFactors: [
+      "Bridge fees: ~$8.20",
+      "Slippage tolerance: 0.5%",
+      "MEV protection: Enabled",
+    ],
+  };
+
+  const handleStartScanning = () => {
+    if (!isVerified) {
+      setShowVerification(true);
+      return;
+    }
+
+    setScanningState("scanning");
+
+    // Simulate scanning process
+    setTimeout(() => {
+      // Randomly choose between finding opportunity or no opportunities
+      const foundOpportunity = Math.random() > 0.3; // 70% chance of finding opportunity
+
+      if (foundOpportunity) {
+        setOpportunityData(mockOpportunity);
+        setScanningState("opportunity-found");
+      } else {
+        setScanningState("no-opportunities");
+      }
+    }, 8000); // 8 second scanning simulation
+  };
+
+  const handleBackToIdle = () => {
+    setScanningState("idle");
+    setOpportunityData(null);
+  };
 
   return (
     <div className="space-y-4 pb-20">
@@ -159,30 +216,12 @@ function ArbitrageView({
 
       {/* Scan Button */}
       <button
-        onClick={() => {
-          if (!isVerified) {
-            setShowVerification(true);
-            return;
-          }
-          setIsScanning(true);
-          setTimeout(() => setIsScanning(false), 2000);
-        }}
-        disabled={isScanning}
+        onClick={handleStartScanning}
+        disabled={scanningState !== "idle"}
         className="flex w-full items-center justify-center gap-3 rounded-xl bg-slate-800 px-6 py-4 text-lg font-medium text-white transition-all hover:bg-slate-700 disabled:opacity-50"
       >
-        {isScanning ? (
-          <>
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-            Scanning...
-          </>
-        ) : (
-          <>
-            <FiSearch className="h-5 w-5" />
-            {isVerified
-              ? "Scan for Opportunities"
-              : "Verify with World ID to Scan"}
-          </>
-        )}
+        <FiSearch className="h-5 w-5" />
+        {isVerified ? "Scan for Opportunities" : "Verify with World ID to Scan"}
       </button>
 
       {/* World ID Verification Modal */}
@@ -355,6 +394,16 @@ function ArbitrageView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Scanning Flow Screens */}
+      {scanningState !== "idle" && (
+        <ScanningFlowScreens
+          scanningState={scanningState}
+          setScanningState={setScanningState}
+          opportunityData={opportunityData}
+          onBack={handleBackToIdle}
+        />
       )}
 
       {/* Rate Limit */}
