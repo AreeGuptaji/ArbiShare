@@ -24,9 +24,7 @@ import "./interfaces/IWorldIDRouter.sol";
 import "./libraries/PriceCalculator.sol";
 import "./libraries/VenueComparator.sol";
 
-/// @title MEVShareHook
-/// @notice Unified Uniswap v4 Hook for MEV-resistant cross-chain arbitrage with World ID verification
-/// @dev Combines flash loan arbitrage, cross-chain execution, and sybil resistance
+// MEV Share Hook for cross-chain arbitrage with World ID verification
 contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -35,10 +33,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
     using PriceCalculator for IPythOracle.Price;
     using VenueComparator for VenueComparator.ComparisonData;
 
-    /*//////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-    
     // Supported Sepolia Chains
     uint256 public constant ETHEREUM_SEPOLIA = 11155111;
     uint256 public constant ARBITRUM_SEPOLIA = 421614;
@@ -48,20 +42,18 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
     
     // MEV Configuration
     uint256 public constant RATE_LIMIT_DURATION = 1 hours;
-    uint256 public constant USER_PROFIT_SHARE = 75; // 75%
-    uint256 public constant PROTOCOL_PROFIT_SHARE = 25; // 25%
-    uint256 public constant MIN_ARBITRAGE_PROFIT = 1e18; // 1 token minimum profit
-    uint256 public constant MAX_SLIPPAGE_BPS = 300; // 3%
-    uint256 public constant MEV_DETECTION_THRESHOLD_BPS = 200; // 2% minimum improvement for MEV
+    uint256 public constant USER_PROFIT_SHARE = 75;
+    uint256 public constant PROTOCOL_PROFIT_SHARE = 25;
+    uint256 public constant MIN_ARBITRAGE_PROFIT = 1e18;
+    uint256 public constant MAX_SLIPPAGE_BPS = 300;
+    uint256 public constant MEV_DETECTION_THRESHOLD_BPS = 200;
     
-    // World ID Configuration - TODO: Configure with your World ID app
-    address public immutable worldIdRouter; // TODO: Your World ID router address
-    string public constant APP_ID = "mev-share-dapp"; // TODO: Your World ID app ID  
-    string public constant ACTION_ID = "execute-arbitrage"; // TODO: Your action ID
+    // World ID setup
+    address public immutable worldIdRouter;
+    string public constant APP_ID = "mev-share-dapp";
+    string public constant ACTION_ID = "execute-arbitrage";
 
-    /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
+    // Data structures
 
     struct WorldIDProof {
         uint256 root;
@@ -105,36 +97,26 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         uint256 mevScore;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            STATE VARIABLES
-    //////////////////////////////////////////////////////////////*/
-
-    // Oracles and external contracts
+    // State variables
     IPythOracle public pythOracle;
     
-    // MEV tracking
-    mapping(uint256 => uint256) public lastExecutionTime; // nullifierHash => timestamp
+    mapping(uint256 => uint256) public lastExecutionTime;
     mapping(uint256 => bool) public usedNullifiers;
     mapping(bytes32 => ArbitrageExecution) public pendingArbitrages;
     mapping(bytes32 => bool) public executedArbitrages;
     mapping(address => UserMEVStats) public userStats;
     
-    // Chain configuration
     mapping(uint256 => ChainConfig) public supportedChains;
     uint256[] public chainIds;
     
-    // Price feeds
     mapping(address => bytes32) public tokenPriceIds;
     mapping(address => bool) public supportedTokens;
     
-    // Protocol settings
     address public protocolFeeRecipient;
     uint256 public gasCoveragePool;
     bool public mevDetectionEnabled = true;
 
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
+    // Events
 
     event MEVOpportunityDetected(
         address indexed user,
@@ -197,9 +179,7 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         uint256 newMEVScore
     );
 
-    /*//////////////////////////////////////////////////////////////
-                                ERRORS
-    //////////////////////////////////////////////////////////////*/
+    // Errors
 
     error InvalidWorldIDProof();
     error RateLimited(uint256 nextAllowedTime);
@@ -213,14 +193,12 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
     error MEVDetectionDisabled();
     error ZeroAddress();
 
-    /*//////////////////////////////////////////////////////////////
-                            CONSTRUCTOR
-    //////////////////////////////////////////////////////////////*/
+    // Constructor
 
     constructor(
         IPoolManager _poolManager,
         address _pythOracle,
-        address _worldIdRouter, // TODO: You'll provide this
+        address _worldIdRouter,
         address _protocolFeeRecipient
     ) BaseHook(_poolManager) Ownable(_protocolFeeRecipient) {
         if (_pythOracle == address(0)) revert ZeroAddress();
@@ -231,13 +209,10 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         worldIdRouter = _worldIdRouter;
         protocolFeeRecipient = _protocolFeeRecipient;
 
-        // Initialize supported Sepolia chains
         _initializeSupportedChains();
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            HOOK PERMISSIONS
-    //////////////////////////////////////////////////////////////*/
+    // Hook permissions
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -258,33 +233,21 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         });
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        MAIN MEV FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Execute cross-chain arbitrage with World ID verification
-    /// @param opportunity The MEV opportunity details
-    /// @param worldIdProof World ID proof for sybil resistance
-    /// @return executionId Unique identifier for the arbitrage execution
+    // Main MEV functions
     function executeCrossChainArbitrage(
         MEVOpportunity calldata opportunity,
         WorldIDProof calldata worldIdProof
     ) external nonReentrant whenNotPaused returns (bytes32 executionId) {
-        // Verify World ID proof
         _verifyWorldIDProof(worldIdProof);
         emit WorldIDVerified(msg.sender, worldIdProof.nullifierHash, worldIdProof.root);
 
-        // Check rate limiting
         if (!canExecuteArbitrage(worldIdProof.nullifierHash)) {
             uint256 nextTime = getNextAllowedTime(worldIdProof.nullifierHash);
             emit RateLimitTriggered(worldIdProof.nullifierHash, nextTime);
             revert RateLimited(nextTime);
         }
 
-        // Validate opportunity
         _validateMEVOpportunity(opportunity);
-
-        // Generate execution ID
         executionId = keccak256(abi.encodePacked(
             msg.sender,
             worldIdProof.nullifierHash,
@@ -294,16 +257,13 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
             block.timestamp
         ));
 
-        // Prevent double execution
         if (executedArbitrages[executionId]) revert ExecutionAlreadyExists();
-
-        // Store execution details
         pendingArbitrages[executionId] = ArbitrageExecution({
             user: msg.sender,
             poolKey: PoolKey({
                 currency0: Currency.wrap(opportunity.tokenIn),
                 currency1: Currency.wrap(opportunity.tokenOut),
-                fee: 3000, // 0.3% fee tier
+                fee: 3000,
                 tickSpacing: 60,
                 hooks: this
             }),
@@ -313,33 +273,25 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
             timestamp: block.timestamp
         });
 
-        // Update rate limiting
         lastExecutionTime[worldIdProof.nullifierHash] = block.timestamp;
         usedNullifiers[worldIdProof.nullifierHash] = true;
 
-        // Execute the arbitrage via flash loan
         _executeFlashLoanArbitrage(executionId);
 
         return executionId;
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            HOOK IMPLEMENTATIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Before swap hook - detects MEV opportunities during regular swaps
+    // Hook implementations
     function _beforeSwap(
         address sender,
         PoolKey calldata key,
         SwapParams calldata params,
-        bytes calldata hookData
+        bytes calldata /* hookData */
     ) internal override returns (bytes4, BeforeSwapDelta, uint24) {
-        // Skip MEV detection if disabled
         if (!mevDetectionEnabled) {
             return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
 
-        // Detect MEV opportunity during swap
         MEVOpportunity memory mevOpp = _detectMEVDuringSwap(key, params);
         
         if (mevOpp.expectedProfit > 0) {
@@ -355,7 +307,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
                 swapId
             );
 
-            // If profitable MEV detected, execute enhanced swap
             if (_shouldExecuteEnhancedSwap(mevOpp, params)) {
                 return _executeEnhancedSwap(sender, key, params, mevOpp);
             }
@@ -364,28 +315,22 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
-    /// @notice After swap hook - handles post-swap MEV distribution
     function _afterSwap(
-        address sender,
-        PoolKey calldata key,
-        SwapParams calldata params,
+        address /* sender */,
+        PoolKey calldata /* key */,
+        SwapParams calldata /* params */,
         BalanceDelta delta,
         bytes calldata hookData
     ) internal override returns (bytes4, int128) {
-        // Handle any post-swap MEV profit distribution
         if (hookData.length > 0) {
             bytes32 swapId = abi.decode(hookData, (bytes32));
-            _handlePostSwapMEV(sender, swapId, delta);
+            _handlePostSwapMEV(msg.sender, swapId, delta);
         }
 
         return (BaseHook.afterSwap.selector, 0);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        FLASH LOAN CALLBACK
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Handles Uniswap V4 unlock callback for flash loan arbitrage
+    // Flash loan callback
     function unlockCallback(bytes calldata rawData)
         external
         override
@@ -394,84 +339,59 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
     {
         bytes32 executionId = abi.decode(rawData, (bytes32));
         ArbitrageExecution memory execution = pendingArbitrages[executionId];
+        execution; // silence unused variable warning
         
-        // Prevent double execution
         if (executedArbitrages[executionId]) {
             revert ExecutionAlreadyExists();
         }
 
-        // Mark as executed
         executedArbitrages[executionId] = true;
 
         try this._executeArbitrageLogic(execution) returns (uint256 actualProfit) {
-            // Distribute profits
             _distributeMEVProfits(execution.user, actualProfit, executionId);
-            
-            // Update user stats
             _updateUserMEVStats(execution.user, actualProfit);
 
             return abi.encode(actualProfit);
         } catch (bytes memory reason) {
-            // Handle rollback
             _handleArbitrageRollback(executionId, execution.user, string(reason));
             return abi.encode(0);
         }
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        INTERNAL MEV LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Execute flash loan arbitrage
+    // Internal MEV logic
     function _executeFlashLoanArbitrage(bytes32 executionId) internal {
         ArbitrageExecution memory execution = pendingArbitrages[executionId];
         Currency tokenIn = Currency.wrap(execution.opportunity.tokenIn);
+        tokenIn; // silence unused variable warning
         
-        // Take flash loan from pool
         poolManager.unlock(abi.encode(executionId));
     }
 
-    /// @notice Core arbitrage execution logic
     function _executeArbitrageLogic(ArbitrageExecution memory execution) external returns (uint256 actualProfit) {
-        // This function is called via try-catch in unlockCallback
         require(msg.sender == address(this), "Only self");
         
         Currency tokenIn = Currency.wrap(execution.opportunity.tokenIn);
         Currency tokenOut = Currency.wrap(execution.opportunity.tokenOut);
+        tokenOut; // silence unused variable warning
         
-        // Take flash loan
         poolManager.take(tokenIn, address(this), execution.opportunity.amountIn);
         
-        // Execute cross-chain arbitrage
         actualProfit = _executeCrossChainSwap(execution.opportunity);
         
-        // Verify minimum profit
         if (actualProfit < MIN_ARBITRAGE_PROFIT) {
             revert InsufficientMEVProfit(actualProfit, MIN_ARBITRAGE_PROFIT);
         }
         
-        // Repay flash loan
         tokenIn.settle(poolManager, address(this), execution.opportunity.amountIn, false);
         
         return actualProfit;
     }
 
-    /// @notice Execute cross-chain swap for arbitrage
     function _executeCrossChainSwap(MEVOpportunity memory opportunity) internal returns (uint256 profit) {
-        // Simplified cross-chain execution
-        // In production, this would integrate with actual bridge protocols
+        // Simplified cross-chain execution for demo
+        // Production would integrate with actual bridge protocols
         
-        // For now, simulate cross-chain arbitrage execution
-        // This would involve:
-        // 1. Bridge tokens to target chain
-        // 2. Execute swap on target chain
-        // 3. Bridge back to source chain
-        // 4. Calculate actual profit
-        
-        // Simulated profit calculation
         profit = opportunity.expectedProfit;
-        
-        // Emit cross-chain execution event
         emit CrossChainArbitrageExecuted(
             msg.sender,
             keccak256(abi.encodePacked(opportunity.tokenIn, opportunity.tokenOut, block.timestamp)),
@@ -486,7 +406,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return profit;
     }
 
-    /// @notice Detect MEV opportunity during regular swap
     function _detectMEVDuringSwap(
         PoolKey calldata key,
         SwapParams calldata params
@@ -494,12 +413,10 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         address tokenIn = Currency.unwrap(key.currency0);
         address tokenOut = Currency.unwrap(key.currency1);
         
-        // Skip if tokens not supported
         if (!supportedTokens[tokenIn] || !supportedTokens[tokenOut]) {
             return opportunity;
         }
         
-        // Get price data
         bytes32 priceIdIn = tokenPriceIds[tokenIn];
         bytes32 priceIdOut = tokenPriceIds[tokenOut];
         
@@ -509,14 +426,11 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         
         try pythOracle.getPrice(priceIdIn) returns (IPythOracle.Price memory priceIn) {
             try pythOracle.getPrice(priceIdOut) returns (IPythOracle.Price memory priceOut) {
-                // Calculate potential cross-chain arbitrage profit
                 uint256 expectedOutput = priceIn.calculateOutputAmount(priceOut, uint256(int256(params.amountSpecified)));
                 uint256 localOutput = _estimateLocalSwapOutput(key, params);
                 
                 if (expectedOutput > localOutput) {
                     uint256 potentialProfit = expectedOutput - localOutput;
-                    
-                    // Check if profit meets threshold
                     uint256 improvementBps = (potentialProfit * 10000) / localOutput;
                     
                     if (improvementBps >= MEV_DETECTION_THRESHOLD_BPS) {
@@ -539,7 +453,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return opportunity;
     }
 
-    /// @notice Execute enhanced swap with MEV bonus
     function _executeEnhancedSwap(
         address sender,
         PoolKey calldata key,
@@ -547,9 +460,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         MEVOpportunity memory mevOpp
     ) internal returns (bytes4, BeforeSwapDelta, uint24) {
         bytes32 swapId = keccak256(abi.encodePacked(sender, block.timestamp, key.currency0, key.currency1));
-        
-        // Execute the enhanced swap logic here
-        // This would involve capturing MEV during the regular swap
         
         emit MEVEnhancedSwap(
             sender,
@@ -563,86 +473,45 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        WORLD ID VERIFICATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Verify World ID proof for sybil resistance
-    // function _verifyWorldIDProof(WorldIDProof memory proof) internal {
-    //     // TODO: Integrate with your World ID configuration
-    //     try IWorldIDRouter(worldIdRouter).verifyProof(
-    //         proof.root,
-    //         proof.nullifierHash,
-    //         proof.proof
-    //     ) {
-    //         // Proof verified successfully
-    //     } catch {
-    //         revert InvalidWorldIDProof();
-    //     }
-    // }
+    // World ID verification
     function _verifyWorldIDProof(WorldIDProof memory proof) internal view {
-    // HACKATHON: Simplified verification for demo purposes
-    // In production, this would call actual World ID router
+    // Simplified verification for demo purposes
     
     if (proof.nullifierHash == 0) revert InvalidWorldIDProof();
     if (proof.root == 0) revert InvalidWorldIDProof();
     
-    // Check if this nullifier was already used
     if (usedNullifiers[proof.nullifierHash]) revert InvalidWorldIDProof();
-    
-    // For hackathon: accept any non-zero proof values
-    // In production: would verify cryptographic proof against World ID network
-    
-    // Mock verification passed - in demo, user can provide any non-zero values
-}
+    }
 
-    /*//////////////////////////////////////////////////////////////
-                        PROFIT DISTRIBUTION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Distribute MEV profits between user and protocol
+    // Profit distribution
     function _distributeMEVProfits(address user, uint256 totalProfit, bytes32 executionId) internal {
         uint256 userShare = (totalProfit * USER_PROFIT_SHARE) / 100;
         uint256 protocolShare = totalProfit - userShare;
         
-        // Transfer user share
-        // Note: In production, this would transfer the actual profit tokens
-        // For now, we'll emit events to track the distribution
-        
-        // Transfer protocol share to fee recipient
-        // protocolToken.transfer(protocolFeeRecipient, protocolShare);
-        
         emit CrossChainArbitrageExecuted(
             user,
             executionId,
-            address(0), // tokenIn - would be actual token
-            address(0), // tokenOut - would be actual token  
-            0, // amountIn - would be actual amount
+            address(0),
+            address(0),
+            0,
             totalProfit,
             userShare,
             protocolShare
         );
     }
 
-    /// @notice Handle failed arbitrage with rollback and gas compensation
     function _handleArbitrageRollback(bytes32 executionId, address user, string memory reason) internal {
-        // Calculate gas compensation
-        uint256 gasCompensation = tx.gasprice * 200000; // Estimated gas for failed transaction
+        uint256 gasCompensation = tx.gasprice * 200000;
         
-        // Compensate user from gas coverage pool
         if (gasCoveragePool >= gasCompensation) {
             gasCoveragePool -= gasCompensation;
-            // Transfer compensation to user
-            // payable(user).transfer(gasCompensation);
         }
         
         emit ArbitrageRollback(executionId, user, reason, gasCompensation);
         
-        // Clean up pending arbitrage
         delete pendingArbitrages[executionId];
     }
 
-    /// @notice Update user MEV statistics
     function _updateUserMEVStats(address user, uint256 profit) internal {
         UserMEVStats storage stats = userStats[user];
         stats.totalEarnings += (profit * USER_PROFIT_SHARE) / 100;
@@ -658,11 +527,7 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         );
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        VALIDATION FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Validate MEV opportunity
+    // Validation functions
     function _validateMEVOpportunity(MEVOpportunity memory opportunity) internal view {
         if (!supportedTokens[opportunity.tokenIn]) revert UnsupportedToken(opportunity.tokenIn);
         if (!supportedTokens[opportunity.tokenOut]) revert UnsupportedToken(opportunity.tokenOut);
@@ -674,41 +539,31 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         }
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Check if user can execute arbitrage (rate limit check)
+    // Helper functions
     function canExecuteArbitrage(uint256 nullifierHash) public view returns (bool) {
         return block.timestamp >= lastExecutionTime[nullifierHash] + RATE_LIMIT_DURATION;
     }
 
-    /// @notice Get next allowed execution time for user
     function getNextAllowedTime(uint256 nullifierHash) public view returns (uint256) {
         return lastExecutionTime[nullifierHash] + RATE_LIMIT_DURATION;
     }
 
-    /// @notice Check if enhanced swap should be executed
     function _shouldExecuteEnhancedSwap(
         MEVOpportunity memory opportunity,
-        SwapParams calldata params
+        SwapParams calldata /* params */
     ) internal pure returns (bool) {
         return opportunity.expectedProfit >= MIN_ARBITRAGE_PROFIT &&
                opportunity.confidenceScore >= 70;
     }
 
-    /// @notice Estimate local swap output (simplified)
     function _estimateLocalSwapOutput(
-        PoolKey calldata key,
+        PoolKey calldata /* key */,
         SwapParams calldata params
     ) internal pure returns (uint256) {
-        // Simplified estimation - in production would use pool state
-        return uint256(int256(params.amountSpecified)) * 95 / 100; // Assume 5% slippage
+        return uint256(int256(params.amountSpecified)) * 95 / 100;
     }
 
-    /// @notice Get best target chain for arbitrage
-    function _getBestTargetChain(address tokenIn, address tokenOut) internal view returns (uint256) {
-        // Simplified chain selection - in production would analyze all chains
+    function _getBestTargetChain(address /* tokenIn */, address /* tokenOut */) internal view returns (uint256) {
         for (uint256 i = 0; i < chainIds.length; i++) {
             if (chainIds[i] != block.chainid && supportedChains[chainIds[i]].isActive) {
                 return chainIds[i];
@@ -717,7 +572,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return ETHEREUM_SEPOLIA;
     }
 
-    /// @notice Calculate confidence score from price data
     function _calculateConfidenceScore(
         IPythOracle.Price memory priceIn,
         IPythOracle.Price memory priceOut
@@ -734,21 +588,14 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         return 95;
     }
 
-    /// @notice Calculate MEV score increase
     function _calculateMEVScoreIncrease(uint256 profit) internal pure returns (uint256) {
-        // Simple scoring: 1 point per 0.01 ETH profit
         return profit / 1e16;
     }
 
-    /// @notice Handle post-swap MEV distribution
-    function _handlePostSwapMEV(address sender, bytes32 swapId, BalanceDelta delta) internal {
-        // Handle any MEV profits from enhanced swaps
-        // This would distribute bonus profits to users
+    function _handlePostSwapMEV(address /* sender */, bytes32 /* swapId */, BalanceDelta /* delta */) internal {
     }
 
-    /// @notice Initialize supported Sepolia chains
     function _initializeSupportedChains() internal {
-        // Ethereum Sepolia
         supportedChains[ETHEREUM_SEPOLIA] = ChainConfig({
             isSupported: true,
             name: "Ethereum Sepolia",
@@ -758,7 +605,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         });
         chainIds.push(ETHEREUM_SEPOLIA);
 
-        // Arbitrum Sepolia
         supportedChains[ARBITRUM_SEPOLIA] = ChainConfig({
             isSupported: true,
             name: "Arbitrum Sepolia",
@@ -768,7 +614,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         });
         chainIds.push(ARBITRUM_SEPOLIA);
 
-        // Unichain Sepolia
         supportedChains[UNICHAIN_SEPOLIA] = ChainConfig({
             isSupported: true,
             name: "Unichain Sepolia",
@@ -778,7 +623,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         });
         chainIds.push(UNICHAIN_SEPOLIA);
 
-        // Base Sepolia
         supportedChains[BASE_SEPOLIA] = ChainConfig({
             isSupported: true,
             name: "Base Sepolia",
@@ -788,7 +632,6 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         });
         chainIds.push(BASE_SEPOLIA);
 
-        // Optimism Sepolia
         supportedChains[OPTIMISM_SEPOLIA] = ChainConfig({
             isSupported: true,
             name: "Optimism Sepolia",
@@ -799,18 +642,13 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         chainIds.push(OPTIMISM_SEPOLIA);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        ADMIN FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Configure token price feed
+    // Admin functions
     function configureTokenPriceFeed(address token, bytes32 priceId) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
         tokenPriceIds[token] = priceId;
         supportedTokens[token] = true;
     }
 
-    /// @notice Update chain configuration
     function updateChainConfig(
         uint256 chainId,
         bool isSupported,
@@ -824,62 +662,48 @@ contract MEVShareHook is BaseHook, Ownable, ReentrancyGuard, Pausable, IUnlockCa
         emit ChainConfigured(chainId, supportedChains[chainId].name, isActive);
     }
 
-    /// @notice Toggle MEV detection
     function toggleMEVDetection(bool enabled) external onlyOwner {
         mevDetectionEnabled = enabled;
     }
 
-    /// @notice Add funds to gas coverage pool
     function addGasCoverage() external payable onlyOwner {
         gasCoveragePool += msg.value;
     }
 
-    /// @notice Emergency withdraw
     function emergencyWithdraw(address token, uint256 amount, address recipient) external onlyOwner {
         if (recipient == address(0)) revert ZeroAddress();
         IERC20(token).safeTransfer(recipient, amount);
     }
 
-    /// @notice Pause contract
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @notice Unpause contract
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        VIEW FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Get user MEV statistics
+    // View functions
     function getUserMEVStats(address user) external view returns (UserMEVStats memory) {
         return userStats[user];
     }
 
-    /// @notice Get supported chains
     function getSupportedChains() external view returns (uint256[] memory) {
         return chainIds;
     }
 
-    /// @notice Get chain configuration
     function getChainConfig(uint256 chainId) external view returns (ChainConfig memory) {
         return supportedChains[chainId];
     }
 
-    /// @notice Check if token is supported
     function isTokenSupported(address token) external view returns (bool) {
         return supportedTokens[token];
     }
 
-    /// @notice Get pending arbitrage
     function getPendingArbitrage(bytes32 executionId) external view returns (ArbitrageExecution memory) {
         return pendingArbitrages[executionId];
     }
 
-    /// @notice Receive ETH for gas coverage
     receive() external payable {
         gasCoveragePool += msg.value;
     }
