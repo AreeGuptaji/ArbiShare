@@ -20,3 +20,4 @@ export function MinimalTest() {
     </div>
   );
 }
+
