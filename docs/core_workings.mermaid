@@ -1,105 +1,138 @@
 graph TB
     %% User Layer
-    subgraph "User Interface"
-        WMA[Worldcoin Mini App<br/>React + Worldcoin SDK]
-        WEB[Web Dashboard<br/>React Frontend]
+    subgraph "User Interface Layer"
+        WMA["🌍 Worldcoin Mini App<br/>Mobile MEV Interface<br/>Arbitrage + LP Modes"]
+        WEB["💻 Web Dashboard<br/>Desktop MEV Interface<br/>Real-time Opportunities"]
     end
 
     %% Identity & Authentication
-    subgraph "Identity Verification"
-        WC[Worldcoin Protocol<br/>World ID Verification]
-        WID[(World ID<br/>Sybil Resistance)]
+    subgraph "Sybil Resistance Layer"
+        WID["🔐 World ID Verification<br/>Nullifier Hash Tracking<br/>1-Hour Rate Limiting"]
+        PROOF["📋 World ID Proof<br/>Root + Nullifier + ZK Proof"]
     end
 
-    %% Backend Services
-    subgraph "Backend Services"
-        API[Node.js Backend<br/>TypeScript]
-        NOTI[Notification Service<br/>Push/Email Alerts]
-        ANALYTICS[Analytics Engine<br/>Trade Stats & Monitoring]
+    %% Price Discovery & MEV Detection
+    subgraph "MEV Detection Layer"
+        PYTH["🔮 Pyth Network Oracles<br/>Real-time Cross-Chain Prices<br/>Confidence Scoring"]
+        SCANNER["🔍 MEV Opportunity Scanner<br/>Cross-Chain Price Analysis<br/>Venue Comparison"]
+        CALC["📊 Price Calculator Library<br/>Output Amount Calculation<br/>Slippage & Impact Analysis"]
     end
 
-    %% External APIs
-    subgraph "External Integrations"
-        ONEINCH[1inch Aggregation API<br/>Price Discovery & Routing]
-        RPC[Chain RPC Endpoints<br/>Base, Optimism, Mantle]
+    %% Multi-Chain Infrastructure
+    subgraph "Multi-Chain Support"
+        ETH_SEP["⚡ Ethereum Sepolia<br/>Chain ID: 11155111"]
+        ARB_SEP["🔵 Arbitrum Sepolia<br/>Chain ID: 421614"]
+        UNI_SEP["🦄 Unichain Sepolia<br/>Chain ID: 1301"]
+        BASE_SEP["🔷 Base Sepolia<br/>Chain ID: 84532"]
+        OPT_SEP["🔴 Optimism Sepolia<br/>Chain ID: 11155420"]
     end
 
-    %% Smart Contract Layer
-    subgraph "Smart Contracts (Multi-Chain)"
-        subgraph "Uniswap v4 Integration"
-            HOOKS[FlashArb Hook Contracts<br/>BeforeSwap/AfterSwap]
-            POOLS[Uniswap v4 Pools<br/>Liquidity Sources]
+    %% Smart Contract Core
+    subgraph "MEV-Share Smart Contracts"
+        subgraph "🎣 Uniswap v4 Hook System"
+            HOOK["⚡ MEVShareHook.sol<br/>887 lines - Main Hook Contract<br/>beforeSwap + afterSwap MEV Detection"]
+            MANAGER["🏊 Pool Manager<br/>Uniswap v4 Core<br/>Flash Loan Provider"]
         end
         
-        subgraph "Core Protocol"
-            FLASH[Flash Loan Contract<br/>Atomic Execution Logic]
-            ARB[Arbitrage Contract<br/>Cross-Chain Coordination]
-            GUARD[Sybil Guard Contract<br/>Rate Limiting & Access Control]
+        subgraph "📚 Supporting Libraries"
+            PRICE_LIB["📊 PriceCalculator.sol<br/>209 lines - Pyth Integration<br/>Confidence Scoring"]
+            VENUE_LIB["🏆 VenueComparator.sol<br/>389 lines - Venue Ranking<br/>Execution Optimization"]
+            WORLD_IF["🌍 IWorldIDRouter.sol<br/>World ID Interface<br/>Proof Verification"]
         end
     end
 
-    %% Data Storage
-    subgraph "Data Layer"
-        DB[(Database<br/>User Data & Trade History)]
-        CACHE[(Cache<br/>Price Data & Opportunities)]
+    %% Data & State Management
+    subgraph "State Management Layer"
+        USER_STATS["📈 User MEV Statistics<br/>Total Earnings, Success Rate<br/>MEV Score & Leaderboard"]
+        RATE_LIMIT["⏰ Rate Limiting State<br/>Nullifier → Timestamp<br/>1 Hour Cooldown"]
+        PENDING["⏳ Pending Arbitrages<br/>Execution Tracking<br/>Rollback Management"]
     end
 
-    %% Flow Connections
-    WMA --> WC
-    WEB --> API
-    WMA --> API
-    WC --> WID
-    API --> ONEINCH
-    API --> RPC
-    API --> DB
-    API --> CACHE
-    API --> NOTI
-    API --> ANALYTICS
+    %% Core Flow Connections
+    WMA --> WID
+    WEB --> WID
+    WID --> PROOF
+    PROOF --> HOOK
     
-    HOOKS --> FLASH
-    HOOKS --> POOLS
-    FLASH --> ARB
-    ARB --> GUARD
-    GUARD --> WID
+    %% MEV Detection Flow
+    PYTH --> HOOK
+    SCANNER --> CALC
+    CALC --> HOOK
     
-    API --> HOOKS
-    ONEINCH --> API
-    RPC --> HOOKS
+    %% Multi-Chain Integration
+    HOOK -.-> ETH_SEP
+    HOOK -.-> ARB_SEP
+    HOOK -.-> UNI_SEP
+    HOOK -.-> BASE_SEP
+    HOOK -.-> OPT_SEP
+    
+    %% Library Integration
+    HOOK --> PRICE_LIB
+    HOOK --> VENUE_LIB
+    HOOK --> WORLD_IF
+    
+    %% State Management
+    HOOK --> USER_STATS
+    HOOK --> RATE_LIMIT
+    HOOK --> PENDING
+    
+    %% Hook System Integration
+    HOOK --> MANAGER
+    MANAGER --> HOOK
 
-    %% Process Flow
-    subgraph "Arbitrage Execution Flow"
+    %% MEV Execution Flow
+    subgraph "🚀 MEV Execution Process"
         direction TB
-        A[User Authenticated via World ID] --> B[Scan for Arbitrage Opportunities]
-        B --> C[1inch API Price Discovery]
-        C --> D[Calculate Profit & Gas Costs]
-        D --> E[Execute Flash Loan via Hook]
-        E --> F[Atomic Cross-Chain Swap]
-        F --> G[Profit Distribution]
-        G --> H[Transaction Rollback on Failure]
+        A1["👤 User Verifies World ID<br/>Nullifier Hash Generated"] 
+        A1 --> A2["⏰ Rate Limit Check<br/>1 Hour Cooldown Verified"]
+        A2 --> A3["🔍 MEV Opportunity Detection<br/>Cross-Chain Price Analysis"]
+        A3 --> A4["💰 Profit Calculation<br/>Expected vs Minimum Thresholds"]
+        A4 --> A5["⚡ Flash Loan Execution<br/>Uniswap v4 Unlock Callback"]
+        A5 --> A6["🌉 Cross-Chain Arbitrage<br/>Atomic Swap Execution"]
+        A6 --> A7["💸 Profit Distribution<br/>75% User / 25% Protocol"]
+        A7 --> A8["📊 Stats Update<br/>MEV Score & Earnings"]
+        A8 --> A9["🔄 Rollback on Failure<br/>Gas Compensation"]
     end
 
-    %% Security & Compliance
-    subgraph "Security Layer"
-        AUDIT[OpenZeppelin Audit]
-        MONITOR[Real-time Monitoring]
-        COMPLIANCE[KYC/AML Compatibility]
+    %% Enhanced Swap Flow
+    subgraph "✨ MEV-Enhanced Regular Swaps"
+        direction TB
+        B1["🔄 Regular Swap Initiated<br/>beforeSwap Hook Triggered"]
+        B1 --> B2["🔍 Real-time MEV Detection<br/>Price Comparison Analysis"]
+        B2 --> B3["⚡ Enhanced Swap Execution<br/>Bonus Profit Capture"]
+        B3 --> B4["💰 MEV Profit Sharing<br/>User Gets Bonus"]
     end
 
-    HOOKS -.-> AUDIT
-    API -.-> MONITOR
-    WID -.-> COMPLIANCE
+    %% Security & Architecture
+    subgraph "🛡️ Security & Architecture"
+        SEC1["🔒 Sybil Resistance<br/>World ID + Rate Limiting"]
+        SEC2["⚡ Atomic Execution<br/>Flash Loan Safety"]
+        SEC3["🔄 Automatic Rollback<br/>Gas Compensation Pool"]
+        SEC4["📊 Confidence Scoring<br/>Pyth Oracle Validation"]
+    end
 
-    %% Styling
-    classDef userInterface fill:#e1f5fe
-    classDef identity fill:#fff3e0
-    classDef backend fill:#f3e5f5
-    classDef contracts fill:#e8f5e8
-    classDef external fill:#fce4ec
-    classDef security fill:#ffebee
+    HOOK -.-> SEC1
+    HOOK -.-> SEC2
+    HOOK -.-> SEC3
+    PYTH -.-> SEC4
+
+    %% Enhanced Styling
+    classDef userInterface fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef identity fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef mevDetection fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef multiChain fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef contracts fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    classDef libraries fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef state fill:#f9fbe7,stroke:#33691e,stroke-width:2px
+    classDef security fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    classDef process fill:#e0f2f1,stroke:#00695c,stroke-width:2px
 
     class WMA,WEB userInterface
-    class WC,WID identity
-    class API,NOTI,ANALYTICS backend
-    class HOOKS,POOLS,FLASH,ARB,GUARD contracts
-    class ONEINCH,RPC external
-    class AUDIT,MONITOR,COMPLIANCE security
+    class WID,PROOF identity
+    class PYTH,SCANNER,CALC mevDetection
+    class ETH_SEP,ARB_SEP,UNI_SEP,BASE_SEP,OPT_SEP multiChain
+    class HOOK,MANAGER contracts
+    class PRICE_LIB,VENUE_LIB,WORLD_IF libraries
+    class USER_STATS,RATE_LIMIT,PENDING state
+    class SEC1,SEC2,SEC3,SEC4 security
+    class A1,A2,A3,A4,A5,A6,A7,A8,A9,B1,B2,B3,B4 process

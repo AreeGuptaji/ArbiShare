@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-**Updated Project Name**: MEV-Share (formerly FlashArb)
+**Updated Project Name**: FlashArb
 
-MEV-Share is a cross-chain, sybil-resistant MEV (Maximal Extractable Value) protocol that enables human-verified users to participate in and profit from MEV opportunities through atomic flash loan arbitrage. The system leverages Uniswap v4 hooks, Worldcoin Mini Apps for sybil resistance, and Pyth Network oracles for price discovery. The goal is to democratize MEV extraction by making profitable arbitrage strategies accessible to verified humans, not bots, while providing fair profit sharing and cross-chain execution capabilities.
+FlashArb is a cross-chain, sybil-resistant MEV (Maximal Extractable Value) protocol that enables human-verified users to participate in and profit from MEV opportunities through atomic flash loan arbitrage. The system leverages Uniswap v4 hooks, Worldcoin Mini Apps for sybil resistance, and Pyth Network oracles for price discovery. The goal is to democratize MEV extraction by making profitable arbitrage strategies accessible to verified humans, not bots, while providing fair profit sharing and cross-chain execution capabilities.
 
 ---
 
