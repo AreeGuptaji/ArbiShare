@@ -7,22 +7,24 @@ export function isMiniApp(): boolean {
   // Check if running in Worldcoin Mini-App
   if (typeof window === "undefined") return false;
 
+  // For development/testing - check URL params or localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const isTestMode =
+    urlParams.get("miniapp") === "true" ||
+    localStorage.getItem("miniapp-mode") === "true";
+
+  if (isTestMode) return true;
+
   // Check for World ID mini-app specific indicators
   return (
     window.location.hostname.includes("worldcoin") ||
     window.location.hostname.includes("minikit") ||
     // Check for MiniKit presence
-    typeof (window as any).MiniKit !== "undefined" ||
+    "MiniKit" in window ||
     // Check for World ID specific user agent or referrer
     navigator.userAgent.includes("WorldApp") ||
     document.referrer.includes("worldcoin")
   );
 }
 
-export function getMiniAppContext() {
-  // Get mini-app specific context/data
-  return {
-    isMiniApp: isMiniApp(),
-    version: "1.0.0",
-  };
-}
+// Removed unused getMiniAppContext function

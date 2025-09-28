@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   FiZap,
   FiShield,
@@ -13,40 +13,27 @@ import {
   FiMenu,
   FiX,
 } from "react-icons/fi";
-import { isMiniApp } from "@/utils/miniapp.utils";
 
 export function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const handleLaunchApp = () => {
-    const inMiniApp = isMiniApp();
-
-    if (inMiniApp) {
-      // If user is in World ID mini-app, redirect to verification flow
-      window.location.href = "/";
-    } else {
-      // If user is on regular web, show instructions to use World ID app
-      const message = `
-🌍 FlashArb is designed to work with World ID verification!
-
-To access the full app:
-1. Download the World ID app
-2. Open FlashArb through the World ID mini-app
-3. Complete verification and start earning!
-
-This ensures sybil-resistant arbitrage trading.
-      `.trim();
-
-      alert(message);
-    }
+    // Simply navigate to the dashboard - no verification needed upfront
+    localStorage.setItem("miniapp-mode", "true");
+    window.location.reload();
   };
 
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="relative border-b border-gray-100 bg-white">
+      <header
+        className="relative border-b border-gray-100 bg-white"
+        style={{ zIndex: 100 }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
@@ -99,9 +86,12 @@ This ensures sybil-resistant arbitrage trading.
             </button>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu - Fixed z-index issue */}
           {isMenuOpen && (
-            <div className="absolute top-full right-0 left-0 z-50 border-b border-gray-100 bg-white shadow-lg md:hidden">
+            <div
+              className="absolute top-full right-0 left-0 z-50 border-b border-gray-100 bg-white shadow-lg md:hidden"
+              style={{ position: "absolute", zIndex: 50 }}
+            >
               <div className="space-y-4 px-4 py-4">
                 <a
                   href="#features"
@@ -146,7 +136,10 @@ This ensures sybil-resistant arbitrage trading.
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             {/* Left Content */}
-            <div className="space-y-8">
+            <div
+              className="space-y-8"
+              style={{ position: "relative", zIndex: 1 }}
+            >
               <div className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">
                 <FiShield className="mr-2 h-4 w-4" />
                 Secured by World ID

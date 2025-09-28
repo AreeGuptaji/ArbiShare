@@ -42,7 +42,7 @@ importers:
         specifier: ^2.5.4
         version: 2.6.0
       viem:
-        specifier: 2.x
+        specifier: ~2.37.8
         version: 2.37.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       wagmi:
         specifier: ^2.17.5

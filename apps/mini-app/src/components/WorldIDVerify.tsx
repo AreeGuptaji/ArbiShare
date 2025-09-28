@@ -6,19 +6,10 @@ import {
   type ISuccessResult,
 } from "@worldcoin/minikit-js";
 import { useState } from "react";
-import { FiShield, FiCheck } from "react-icons/fi";
+import { FiShield, FiUsers, FiZap, FiLock } from "react-icons/fi";
 
 interface WorldIDVerifyParams {
   onVerified: () => void;
-}
-
-interface VerifyResponse {
-  verifyRes: {
-    success: boolean;
-  };
-  status: number;
-  error?: string;
-  message?: string;
 }
 
 export function WorldIDVerify({ onVerified }: WorldIDVerifyParams) {
@@ -80,55 +71,131 @@ export function WorldIDVerify({ onVerified }: WorldIDVerifyParams) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-          <FiShield className="h-6 w-6 text-blue-600" />
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      {/* Header */}
+      <div className="pt-16 pb-8 text-center">
+        <h1 className="mb-2 text-2xl font-bold text-gray-900">
+          Flash Arbitrage
+        </h1>
+
+        {/* Large Shield Icon */}
+        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-slate-800">
+          <FiShield className="h-10 w-10 text-white" />
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Verify Your Identity
-        </h3>
-        <p className="text-sm text-gray-600">
-          Prove you&apos;re human with World ID to access sybil-resistant
-          arbitrage trading
+
+        <h2 className="mb-3 text-xl font-semibold text-gray-900">
+          Verification Required
+        </h2>
+        <p className="px-6 leading-relaxed text-gray-600">
+          To ensure fair access and prevent abuse, we require World ID
+          verification before you can access arbitrage opportunities.
         </p>
       </div>
 
-      <div className="space-y-3 text-sm">
-        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-          <FiCheck className="h-4 w-4 flex-shrink-0 text-green-600" />
-          <span className="text-gray-700">
-            One arbitrage per human per hour
-          </span>
+      {/* Benefits Section */}
+      <div className="flex-1 space-y-4 px-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+              <FiUsers className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="mb-1 font-semibold text-gray-900">
+                Limited Opportunities Per Person
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Each verified user gets fair access to profitable arbitrage
+                opportunities without unlimited exploitation.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-          <FiCheck className="h-4 w-4 flex-shrink-0 text-green-600" />
-          <span className="text-gray-700">No bot competition</span>
+
+        <div className="rounded-xl border border-gray-100 bg-white p-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
+              <FiZap className="h-5 w-5 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="mb-1 font-semibold text-gray-900">
+                No Bot Competition
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Human verification prevents automated bots from monopolizing
+                profitable trades and ensures real users benefit.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-          <FiCheck className="h-4 w-4 flex-shrink-0 text-green-600" />
-          <span className="text-gray-700">Fair access to opportunities</span>
+
+        <div className="rounded-xl border border-gray-100 bg-white p-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
+              <svg
+                className="h-5 w-5 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-9m3 9l3-9"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="mb-1 font-semibold text-gray-900">
+                Fair Access to Everyone
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Equal opportunity distribution ensures all verified users have
+                the same chance at profitable arbitrage trades.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <button
-        onClick={handleVerify}
-        disabled={isVerifying}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
-      >
-        {isVerifying ? (
-          <>
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Verifying...
-          </>
-        ) : (
-          <>🌍 Verify with World ID</>
-        )}
-      </button>
+      {/* Privacy Notice */}
+      <div className="px-6 py-4">
+        <div className="mb-6 flex items-center gap-3">
+          <FiLock className="h-5 w-5 text-gray-600" />
+          <div>
+            <h4 className="font-medium text-gray-900">
+              Your Privacy is Protected
+            </h4>
+            <p className="text-sm text-gray-600">
+              World ID verification is anonymous and secure. We only confirm
+              you&apos;re human - no personal data is stored or shared.
+            </p>
+          </div>
+        </div>
 
-      <p className="text-center text-xs text-gray-500">
-        Your privacy is protected. Only proof of humanity is verified.
-      </p>
+        {/* Verify Button */}
+        <button
+          onClick={handleVerify}
+          disabled={isVerifying}
+          className="flex w-full items-center justify-center gap-3 rounded-xl bg-slate-800 px-6 py-4 text-lg font-medium text-white transition-all hover:bg-slate-700 disabled:opacity-50"
+        >
+          {isVerifying ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Verifying...
+            </>
+          ) : (
+            <>
+              <span className="text-xl">🌍</span>
+              Verify with World ID
+            </>
+          )}
+        </button>
+
+        <p className="mt-4 text-center text-sm text-gray-500">
+          Powered by Worldcoin
+        </p>
+      </div>
     </div>
   );
 }
