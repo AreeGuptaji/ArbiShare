@@ -5,9 +5,17 @@
 
 export function isMiniApp(): boolean {
   // Check if running in Worldcoin Mini-App
+  if (typeof window === "undefined") return false;
+
+  // Check for World ID mini-app specific indicators
   return (
-    typeof window !== "undefined" &&
-    window.location.hostname.includes("worldcoin")
+    window.location.hostname.includes("worldcoin") ||
+    window.location.hostname.includes("minikit") ||
+    // Check for MiniKit presence
+    typeof (window as any).MiniKit !== "undefined" ||
+    // Check for World ID specific user agent or referrer
+    navigator.userAgent.includes("WorldApp") ||
+    document.referrer.includes("worldcoin")
   );
 }
 

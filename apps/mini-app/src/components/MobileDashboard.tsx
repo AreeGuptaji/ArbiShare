@@ -31,6 +31,8 @@ type DashboardMode = "arbitrage" | "lp";
 export function MobileDashboard() {
   const [activeMode, setActiveMode] = useState<DashboardMode>("arbitrage");
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [isScanning, setIsScanning] = useState(false);
+  const [showMEVAlert, setShowMEVAlert] = useState(false);
 
   const user = mockMiniAppUser;
   const arbitrageStats = mockArbitrageStats;
@@ -38,56 +40,87 @@ export function MobileDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white px-4 py-4 shadow-sm">
+      {/* Enhanced Header with MEV-Share Branding */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-6 text-white">
+        {/* App Title */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20">
+              <span className="text-lg">⚡</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">MEV-Share</h1>
+              <p className="text-xs text-blue-100">
+                Democratizing MEV Extraction
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="rounded-full bg-white/20 p-2">
+              <FiBell className="h-4 w-4" />
+            </div>
+            <div className="rounded-full bg-white/20 p-2">
+              <FiSettings className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* User Info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="text-2xl">{user.avatar}</div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-900">{user.name}</span>
+                <span className="font-semibold text-white">{user.name}</span>
                 {user.worldIdVerified && (
-                  <span className="flex items-center gap-1 rounded-full bg-black px-2 py-1 text-xs text-white">
-                    🌍 World ID
+                  <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-xs">
+                    🌍 Verified
                   </span>
                 )}
               </div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-xl font-bold text-white">
                 {formatCurrency(user.totalBalance)}
               </div>
               <div className="flex items-center gap-1 text-sm">
-                <span
-                  className={`${user.dailyChange >= 0 ? "text-green-600" : "text-red-600"}`}
-                >
+                <span className="text-blue-100">
                   {formatChange(user.dailyChange)} today
                 </span>
               </div>
             </div>
           </div>
-          <FiBell className="h-5 w-5 text-gray-600" />
+
+          {/* Live Status Indicator */}
+          <div className="text-right">
+            <div className="flex items-center gap-1 text-xs text-blue-100">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
+              Live on Sepolia
+            </div>
+            <div className="text-xs text-blue-200">0x4444...00cc</div>
+          </div>
         </div>
 
-        {/* Mode Selector */}
-        <div className="mt-4 flex rounded-lg bg-gray-100 p-1">
+        {/* Enhanced Mode Selector */}
+        <div className="mt-4 flex rounded-lg bg-white/10 p-1 backdrop-blur-sm">
           <button
             onClick={() => setActiveMode("arbitrage")}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md py-3 text-sm font-medium transition-all ${
               activeMode === "arbitrage"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600"
+                ? "bg-white text-blue-600 shadow-lg"
+                : "text-white/80 hover:text-white"
             }`}
           >
-            Arbitrage
+            ⚡ MEV Arbitrage
           </button>
           <button
             onClick={() => setActiveMode("lp")}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md py-3 text-sm font-medium transition-all ${
               activeMode === "lp"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600"
+                ? "bg-white text-purple-600 shadow-lg"
+                : "text-white/80 hover:text-white"
             }`}
           >
-            LP Mode
+            💰 LP Revenue
           </button>
         </div>
       </div>
@@ -101,25 +134,26 @@ export function MobileDashboard() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed right-0 bottom-0 left-0 border-t border-gray-200 bg-white">
+      {/* Enhanced Bottom Navigation */}
+      <div className="fixed right-0 bottom-0 left-0 border-t border-gray-200 bg-white/95 backdrop-blur-sm">
         <div className="flex">
           {[
-            { name: "Dashboard", icon: <FiActivity /> },
-            { name: "Portfolio", icon: <FiPieChart /> },
-            { name: "Leaderboard", icon: <FiTrendingUp /> },
-            { name: "Settings", icon: <FiSettings /> },
+            { name: "Dashboard", icon: <FiActivity />, emoji: "📊" },
+            { name: "Portfolio", icon: <FiPieChart />, emoji: "💼" },
+            { name: "Leaderboard", icon: <FiTrendingUp />, emoji: "🏆" },
+            { name: "Settings", icon: <FiSettings />, emoji: "⚙️" },
           ].map((tab) => {
-            const IconComponent = tab.icon;
             return (
               <button
                 key={tab.name}
                 onClick={() => setActiveTab(tab.name)}
-                className={`flex-1 py-3 text-center ${
-                  activeTab === tab.name ? "text-blue-600" : "text-gray-600"
+                className={`flex-1 py-3 text-center transition-all ${
+                  activeTab === tab.name
+                    ? "scale-105 bg-blue-50 text-blue-600"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                {tab.icon}
+                <div className="text-lg">{tab.emoji}</div>
                 <div className="text-xs font-medium">{tab.name}</div>
               </button>
             );
@@ -170,11 +204,52 @@ function ArbitrageView({ stats }: { stats: typeof mockArbitrageStats }) {
         </div>
       </div>
 
-      {/* Scan Button */}
-      <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 py-4 font-medium text-white">
-        <FiSearch className="h-5 w-5" />
-        Scan for Opportunities
+      {/* Enhanced Scan Button with Demo Interaction */}
+      <button
+        onClick={() => {
+          setIsScanning(true);
+          setTimeout(() => {
+            setIsScanning(false);
+            setShowMEVAlert(true);
+            setTimeout(() => setShowMEVAlert(false), 5000);
+          }, 2000);
+        }}
+        disabled={isScanning}
+        className={`flex w-full items-center justify-center gap-3 rounded-xl py-5 font-semibold text-white shadow-lg transition-all ${
+          isScanning
+            ? "animate-pulse bg-gradient-to-r from-orange-500 to-red-500"
+            : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+        }`}
+      >
+        {isScanning ? (
+          <>
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            Scanning Cross-Chain Prices...
+          </>
+        ) : (
+          <>
+            <FiZap className="h-5 w-5" />
+            🔍 Scan for MEV Opportunities
+          </>
+        )}
       </button>
+      <div className="animate-bounce rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 p-4 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚡</span>
+              <span className="font-bold">MEV Opportunity Found!</span>
+            </div>
+            <div className="text-sm opacity-90">
+              ETH → ARB Cross-Chain Arbitrage
+            </div>
+            <div className="text-lg font-bold">Expected Profit: $127.50</div>
+          </div>
+          <button className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium">
+            Execute
+          </button>
+        </div>
+      </div>
 
       {/* Rate Limit */}
       <div className="rounded-lg bg-white p-4">

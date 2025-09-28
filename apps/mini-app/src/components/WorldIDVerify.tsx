@@ -9,7 +9,7 @@ import { useState } from "react";
 import { FiShield, FiCheck } from "react-icons/fi";
 
 interface WorldIDVerifyParams {
-  setIsVerified: React.Dispatch<React.SetStateAction<boolean>>;
+  onVerified: () => void;
 }
 
 interface VerifyResponse {
@@ -21,7 +21,7 @@ interface VerifyResponse {
   message?: string;
 }
 
-export function WorldIDVerify({ setIsVerified }: WorldIDVerifyParams) {
+export function WorldIDVerify({ onVerified }: WorldIDVerifyParams) {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyPayload: VerifyCommandInput = {
@@ -67,7 +67,7 @@ export function WorldIDVerify({ setIsVerified }: WorldIDVerifyParams) {
 
       if (verifyResponse.ok) {
         console.log("Verification successful!");
-        setIsVerified(true);
+        onVerified();
       } else {
         console.log("Verification failed:");
         // Handle verification failure
