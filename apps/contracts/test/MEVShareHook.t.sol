@@ -61,41 +61,36 @@ contract MEVShareHookTest is Test, Deployers {
     int24 tickUpper;
 
     function setUp() public {
-        // Deploy all required artifacts
         deployArtifacts();
         
         (currency0, currency1) = deployCurrencyPair();
 
-        // Deploy mock World ID router
         worldIdRouter = new MockWorldIDRouter();
         worldIdRouter.setValidNullifier(TEST_NULLIFIER, true);
 
-        // Deploy the hook to an address with the correct flags
         address payable flags = payable(address(
             uint160(
                 Hooks.BEFORE_SWAP_FLAG | 
                 Hooks.AFTER_SWAP_FLAG | 
                 Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG |
                 Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG
-            ) ^ (0x4444 << 144) // Namespace the hook to avoid collisions
+            ) ^ (0x4444 << 144)
         ));
 
         bytes memory constructorArgs = abi.encode(
             poolManager,
-            address(0), // pythOracle - using zero address for testing
+            address(0),
             worldIdRouter,
-            address(this) // protocolFeeRecipient
+            address(this)
         );
 
         deployCodeTo("MEVShareHook.sol:MEVShareHook", constructorArgs, flags);
         hook = MEVShareHook(flags);
 
-        // Create the pool
         poolKey = PoolKey(currency0, currency1, 3000, 60, IHooks(hook));
         poolId = poolKey.toId();
         poolManager.initialize(poolKey, Constants.SQRT_PRICE_1_1);
 
-        // Provide full-range liquidity to the pool
         tickLower = TickMath.minUsableTick(poolKey.tickSpacing);
         tickUpper = TickMath.maxUsableTick(poolKey.tickSpacing);
 
@@ -122,59 +117,42 @@ contract MEVShareHookTest is Test, Deployers {
     }
 
     function testMEVShareHookDeployment() public {
-        // Test that the hook was deployed correctly
         assertTrue(address(hook) != address(0));
-        
-        // Test that World ID router is set
         assertTrue(address(hook.worldIdRouter()) != address(0));
-        
-        // Test hook permissions
         assertTrue(hook.getHookPermissions().beforeSwap);
         assertTrue(hook.getHookPermissions().afterSwap);
     }
 
     function testCanExecuteArbitrage() public {
-        // Initially should be able to execute
         assertTrue(hook.canExecuteArbitrage(TEST_NULLIFIER));
         
-        // Simulate execution by setting last execution time
         vm.store(
             address(hook),
-            keccak256(abi.encode(TEST_NULLIFIER, 1)), // slot for lastExecutionTime mapping
+            keccak256(abi.encode(TEST_NULLIFIER, 1)),
             bytes32(block.timestamp)
         );
         
-        // Should not be able to execute immediately after
         assertFalse(hook.canExecuteArbitrage(TEST_NULLIFIER));
         
-        // Should be able to execute after rate limit period
         vm.warp(block.timestamp + 1 hours + 1);
         assertTrue(hook.canExecuteArbitrage(TEST_NULLIFIER));
     }
 
     function testVerifyPriceSignature() public {
-        // Create a test opportunity
         MEVShareHook.MEVOpportunity memory opportunity = MEVShareHook.MEVOpportunity({
             tokenIn: Currency.unwrap(currency0),
             tokenOut: Currency.unwrap(currency1),
             amountIn: 1e18,
             expectedProfit: 0.1e18,
             sourceChain: block.chainid,
-            targetChain: 11155111, // Ethereum Sepolia
+            targetChain: 11155111,
             deadline: block.timestamp + 5 minutes,
             priceProof: hex"1234",
             confidenceScore: 85
         });
-
-        // Test basic MEV opportunity validation
-        // This would validate the opportunity structure
-        
-        // For now, we just check that the function doesn't revert
-        // In production, you'd create a proper signature and verify it
     }
 
     function testNormalSwapStillWorks() public {
-        // Perform a normal swap without arbitrage hookData
         uint256 amountIn = 1e18;
         
         BalanceDelta swapDelta = swapRouter.swapExactTokensForTokens({
@@ -182,32 +160,27 @@ contract MEVShareHookTest is Test, Deployers {
             amountOutMin: 0,
             zeroForOne: true,
             poolKey: poolKey,
-            hookData: Constants.ZERO_BYTES, // No arbitrage data
+            hookData: Constants.ZERO_BYTES,
             receiver: address(this),
             deadline: block.timestamp + 1
         });
 
-        // Verify swap executed normally
         assertEq(int256(swapDelta.amount0()), -int256(amountIn));
     }
 
     function testRateLimitingPreventsDoubleExecution() public {
         uint256 nullifierHash = TEST_NULLIFIER;
         
-        // First execution should be allowed
         assertTrue(hook.canExecuteArbitrage(nullifierHash));
         
-        // Simulate execution
         vm.store(
             address(hook),
             keccak256(abi.encode(nullifierHash, 1)),
             bytes32(block.timestamp)
         );
         
-        // Second execution should be blocked
         assertFalse(hook.canExecuteArbitrage(nullifierHash));
         
-        // Check next allowed time
         uint256 nextAllowed = hook.getNextAllowedTime(nullifierHash);
         assertEq(nextAllowed, block.timestamp + 1 hours);
     }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../interfaces/IPythOracle.sol";
 
-// Library for price calculations using Pyth oracle
+// Price calculations using Pyth oracle
 library PriceCalculator {
     uint256 public constant MAX_PRICE_STALENESS = 600;
     uint8 public constant MIN_CONFIDENCE_SCORE = 20;
@@ -15,7 +15,6 @@ library PriceCalculator {
     error LowConfidencePrice();
     error PriceCalculationOverflow();
 
-    // Calculate output amount using oracle prices
     function calculateOutputAmount(
         IPythOracle.Price memory priceIn,
         IPythOracle.Price memory priceOut,
@@ -35,7 +34,6 @@ library PriceCalculator {
         return outputAmount;
     }
 
-    // Calculate output with confidence adjustment
     function calculateOutputAmountWithConfidence(
         IPythOracle.Price memory priceIn,
         IPythOracle.Price memory priceOut,
@@ -52,9 +50,8 @@ library PriceCalculator {
         return (outputAmount, confidenceScore);
     }
 
-    // Calculate price impact
     function calculatePriceImpact(
-        uint256 basePrice,
+        uint256 /* basePrice */,
         uint256 tradeSize,
         uint256 liquidityDepth
     ) internal pure returns (uint256 priceImpactBps) {
@@ -66,7 +63,6 @@ library PriceCalculator {
         return priceImpactBps;
     }
 
-    // Apply slippage to output amount
     function applySlippage(
         uint256 outputAmount,
         uint256 slippageBps
@@ -77,7 +73,6 @@ library PriceCalculator {
         return adjustedAmount;
     }
 
-    // Calculate time-weighted average price
     function calculateTWAP(
         uint256[] memory prices,
         uint256[] memory timestamps,
@@ -105,7 +100,6 @@ library PriceCalculator {
         return twapPrice;
     }
 
-    // Validate price data
     function _validatePriceData(IPythOracle.Price memory price) private view {
         if (price.price <= 0) revert InvalidPriceData();
         
@@ -114,7 +108,6 @@ library PriceCalculator {
         }
     }
 
-    // Adjust price to standard precision
     function _adjustPriceToStandard(IPythOracle.Price memory price) 
         private 
         pure 
@@ -136,7 +129,6 @@ library PriceCalculator {
         return adjustedPrice;
     }
 
-    // Calculate confidence score
     function _calculateConfidenceScore(
         IPythOracle.Price memory priceIn,
         IPythOracle.Price memory priceOut
@@ -154,7 +146,6 @@ library PriceCalculator {
         return 95;
     }
 
-    // Check if prices are within acceptable deviation
     function isPriceWithinRange(
         uint256 price1,
         uint256 price2,
@@ -170,7 +161,6 @@ library PriceCalculator {
         return deviationBps <= maxDeviationBps;
     }
 
-    // Calculate volatility-adjusted output
     function applyVolatilityAdjustment(
         uint256 baseOutput,
         uint256[] memory historicalPrices,
