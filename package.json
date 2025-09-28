@@ -1,12 +1,21 @@
 {
-  "name": "flashrab",
+  "name": "flasharb",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "shared"
+  ],
   "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
 }
